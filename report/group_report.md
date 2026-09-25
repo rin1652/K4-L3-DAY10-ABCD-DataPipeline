@@ -6,10 +6,10 @@
 
 | Thông tin         | Nội dung                  |
 | ------------------ | -------------------------- |
-| Khóa/Lớp         | [K3 hoặc K4]              |
-| Tên nhóm         | [Tên hoặc mã nhóm]     |
-| Repository         | [Đường dẫn repository] |
-| Ngày hoàn thành | [YYYY-MM-DD]               |
+| Khóa/Lớp         | K4              |
+| Tên nhóm         | ABCD    |
+| Repository       | https://github.com/rin1652/K4-L3-DAY10-ABCD-DataPipeline.git |
+| Ngày hoàn thành | 2026-09-25             |
 
 ### Thành viên và phân công
 
@@ -17,7 +17,7 @@
 | --: | --- | --- | --- | --- |
 | 1 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 | 2 | Nguyễn Khắc Giáp | 2A202602950 | RAG Specialist | [File, hàm hoặc artifact] |
-| 3 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
+| 3 | Đoàn Tuấn Long | 2A202602609 | Observability & Evaluation Lead | `src/observability/quality.py`, `src/observability/reporting.py`, `src/evaluation/testset.py`, `src/evaluation/metrics.py`, `data/eval/test_set.json` |
 | 4 | [Nếu có] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 | 5 | [Nếu có] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 
@@ -61,8 +61,8 @@ Crossref API
 | Ingestion         | [Nguồn/input] | [Fetch, retry, parse...]   | [Đường dẫn artifact] | [Thành viên] |
 | Cleaning          | [Input]        | [Các quy tắc chính]     | [Đường dẫn artifact] | [Thành viên] |
 | Embedding/index   | [Input]        | [Model/index config]       | [Đường dẫn artifact] | [Thành viên] |
-| Evaluation        | [Input]        | [Test set và metrics]     | [Đường dẫn artifact] | [Thành viên] |
-| Observability     | [Input]        | [Quality/freshness checks] | [Đường dẫn artifact] | [Thành viên] |
+| Evaluation        | Clean dataframe | 10 câu, 4 loại; Hit Rate, Token F1, LLM Judge | `data/eval/test_set.json`, `data/results/*_metrics.json` | Đoàn Tuấn Long |
+| Observability     | Clean / corrupted / repaired dataframe | GX 1.x (4 expectations) và Freshness SLA | `data/quality/`, `data/reports/phase1_report.md`, `data/reports/corruption_report.md` | Đoàn Tuấn Long |
 | Corruption/repair | [Input]        | [Corruption và repair]    | [Đường dẫn artifact] | [Thành viên] |
 | Orchestration     | [Input]        | [Thứ tự chạy]           | [Reports/metrics]        | [Thành viên] |
 

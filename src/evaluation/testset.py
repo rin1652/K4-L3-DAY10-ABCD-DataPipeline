@@ -7,6 +7,54 @@ from typing import Any
 
 import pandas as pd
 
+from core.utils import compact_join, first_sentence, write_json
+
+MIN_DOCUMENTS = 4
+QUESTION_PLAN = (
+    ("summary", 3),
+    ("authors", 3),
+    ("date", 2),
+    ("categories", 2),
+)
+
+
+def _as_text_list(value: Any) -> list[str]:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return []
+    if isinstance(value, str):
+        return [part.strip() for part in value.split(",") if part.strip()]
+    return [str(item).strip() for item in list(value) if str(item).strip()]
+
+
+def _joined(row: pd.Series, joined_column: str, raw_column: str) -> str:
+    joined = row.get(joined_column)
+    if isinstance(joined, str) and joined.strip():
+        return joined.strip()
+    return compact_join(_as_text_list(row.get(raw_column)))
+
+
+def _question(question_type: str, row: pd.Series) -> tuple[str, str]:
+    title = str(row["title"]).strip()
+    if question_type == "summary":
+        return (
+            f"What is the summary of the paper '{title}'?",
+            first_sentence(str(row["summary"])),
+        )
+    if question_type == "authors":
+        return (
+            f"Who are the authors of the paper '{title}'?",
+            _joined(row, "authors_joined", "authors"),
+        )
+    if question_type == "date":
+        return (
+            f"When was the paper '{title}' published?",
+            str(row["published"]).strip(),
+        )
+    return (
+        f"What categories does the paper '{title}' belong to?",
+        _joined(row, "categories_joined", "categories") or str(row.get("primary_category", "")).strip(),
+    )
+
 
 @dataclass(frozen=True)
 class TestSet:
@@ -17,45 +65,39 @@ class TestSet:
 
 
 def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
-    """Create five deterministic benchmark questions from cleaned papers."""
-    required = {"paper_id", "title", "summary", "authors_joined", "published", "categories_joined"}
+    """Build a 10-question evaluation set covering summary, authors, date, and categories."""
+    required = {"paper_id", "title", "summary", "authors", "categories", "published"}
     missing = sorted(required.difference(df.columns))
     if missing:
-        raise ValueError(f"Missing columns for benchmark generation: {missing}")
-    if len(df) < 2:
-        raise ValueError("At least two papers are required to create the benchmark")
+        raise ValueError(f"Missing required columns for the test set: {missing}")
+    if len(df) < MIN_DOCUMENTS:
+        raise ValueError(f"Need at least {MIN_DOCUMENTS} documents to build the test set, got {len(df)}")
 
-    rows = df.drop_duplicates("paper_id").reset_index(drop=True)
-    first, second = rows.iloc[0], rows.iloc[1]
+    usable = df.dropna(subset=["paper_id", "title", "summary", "published"]).reset_index(drop=True)
+    if len(usable) < MIN_DOCUMENTS:
+        raise ValueError(f"Need at least {MIN_DOCUMENTS} complete documents, got {len(usable)}")
 
-    def sample(sample_id: str, kind: str, question: str, truth: str, paper_ids: list[str]) -> dict[str, Any]:
-        return {
-            "id": sample_id,
-            "type": kind,
-            "question_type": kind,
-            "question": question,
-            "ground_truth": truth,
-            "ground_truth_doc_ids": paper_ids,
-        }
+    test_set: list[dict[str, Any]] = []
+    cursor = 0
+    for question_type, count in QUESTION_PLAN:
+        for _ in range(count):
+            row = usable.iloc[cursor % len(usable)]
+            cursor += 1
+            question, ground_truth = _question(question_type, row)
+            if not ground_truth:
+                raise ValueError(f"Empty ground truth for {question_type} on paper {row['paper_id']}")
+            test_set.append(
+                {
+                    "id": f"eval_{len(test_set) + 1:03d}",
+                    "question_type": question_type,
+                    "question": question,
+                    "ground_truth": ground_truth,
+                    "ground_truth_doc_ids": [str(row["paper_id"])],
+                }
+            )
 
-    samples = [
-        sample("q1", "summary", f"Tóm tắt nội dung chính của nghiên cứu '{first['title']}'.", str(first["summary"]), [str(first["paper_id"])]),
-        sample("q2", "authors", f"Ai là tác giả của nghiên cứu '{first['title']}'?", str(first["authors_joined"]), [str(first["paper_id"])]),
-        sample("q3", "date", f"Nghiên cứu '{second['title']}' được công bố vào thời điểm nào?", str(second["published"]), [str(second["paper_id"])]),
-        sample("q4", "category", f"Nghiên cứu '{second['title']}' thuộc lĩnh vực chuyên môn nào?", str(second["categories_joined"]), [str(second["paper_id"])]),
-        sample(
-            "q5",
-            "multi_hop",
-            f"So sánh mối liên hệ giữa nghiên cứu '{first['title']}' và '{second['title']}'.",
-            f"Nghiên cứu thứ nhất thuộc {first['categories_joined']} và tập trung vào: {first['summary']} "
-            f"Nghiên cứu thứ hai thuộc {second['categories_joined']} và tập trung vào: {second['summary']}",
-            [str(first["paper_id"]), str(second["paper_id"])],
-        ),
-    ]
-    path = Path(output_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(samples, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return samples
+    write_json(Path(output_path), test_set)
+    return test_set
 
 
 def load_or_create_test_set(df: pd.DataFrame, output_path) -> TestSet:
