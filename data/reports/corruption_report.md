@@ -11,6 +11,15 @@
 | Truncated titles | 0 | 5 | 0 |
 | Stale rows | 1 | 7 | 1 |
 
+## RAG Quality
+
+| Metric | Baseline | Corrupted | Repaired |
+| --- | ---: | ---: | ---: |
+| Retrieval hit rate | 1.000 | 0.500 | 1.000 |
+| Mean token F1 | 1.000 | 0.765 | 1.000 |
+| Judge accuracy | 1.000 | 0.800 | 1.000 |
+| Mean judge score | 5.000 | 3.800 | 5.000 |
+
 ## Corruption Scenarios
 
 - `drop_latest_records`: 5 rows

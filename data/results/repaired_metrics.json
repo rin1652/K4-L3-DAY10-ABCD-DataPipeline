@@ -5,5 +5,16 @@
   "blank_summary_rows": 0,
   "truncated_title_rows": 0,
   "stale_rows": 1,
-  "stale_ratio": 0.041666666666666664
+  "stale_ratio": 0.041666666666666664,
+  "rag": {
+    "collection": "papers-repaired",
+    "samples": 10,
+    "retrieval_hit_rate": 1.0,
+    "mean_token_f1": 1.0,
+    "judge_accuracy": 1.0,
+    "mean_judge_score": 5,
+    "ragas": {
+      "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
+    }
+  }
 }
