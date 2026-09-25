@@ -56,4 +56,8 @@ def run_agent_question(agent: Any, question: str) -> str:
     if not messages:
         return ""
     final_message = messages[-1]
+    # Responses API returns content as a list of blocks; `.text` flattens it to a string.
+    text = getattr(final_message, "text", None)
+    if isinstance(text, str):
+        return text
     return getattr(final_message, "content", str(final_message))

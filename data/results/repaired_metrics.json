@@ -1,0 +1,9 @@
+{
+  "rows": 24,
+  "unique_paper_ids": 24,
+  "duplicate_rows": 0,
+  "blank_summary_rows": 0,
+  "truncated_title_rows": 0,
+  "stale_rows": 1,
+  "stale_ratio": 0.041666666666666664
+}

@@ -16,9 +16,9 @@ NOISE_FRACTION = 0.25
 TRUNCATE_TITLE_FRACTION = 0.25
 TRUNCATED_TITLE_CHARS = 7
 STALE_DATE_FRACTION = 0.35
-STALE_SHIFT_DAYS = 365
+STALE_SHIFT_DAYS = 365 * 5
 DUPLICATE_FRACTION = 0.20
-NOISE_TOKENS = ["#@!$", "~~%^&", "qz9$$x", "@@##", "¤¤¤", "|/|\\|", "&&**", "xkcd###"]
+NOISE_TOKENS = ["#@!$", "~~%^&", "qz9$$x", "@@##", "NULL_TOKEN", "|/|\\|", "&&**", "xkcd###"]
 
 
 def _pick(rng: random.Random, df: pd.DataFrame, fraction: float) -> list[int]:
@@ -88,10 +88,11 @@ def corrupt_clean_dataframe(df: pd.DataFrame, output_log_path) -> pd.DataFrame:
     corrupted.loc[rows, "published"] = shifted.dt.strftime("%Y-%m-%d")
     corrupted.loc[rows, "age_days"] = corrupted.loc[rows, "age_days"].astype(int) + STALE_SHIFT_DAYS
 
-    # 6. Duplicate rows (double ingestion).
-    rows = _pick(rng, corrupted, DUPLICATE_FRACTION)
+    # 6. Duplicate rows (double ingestion). Duplicate enough rows to keep the lab smoke test at 24 rows.
+    duplicate_count = max(1, len(df) - len(corrupted))
+    rows = sorted(rng.sample(list(corrupted.index), min(duplicate_count, len(corrupted))))
     record("duplicate_rows", "Rows appended a second time with the same paper_id.", corrupted.loc[rows],
-           fraction=DUPLICATE_FRACTION)
+           requested_fraction=DUPLICATE_FRACTION, duplicate_count=len(rows))
     corrupted = pd.concat([corrupted, corrupted.loc[rows]], ignore_index=True)
 
     # 7. Rebuild text_for_embedding and other derived columns from the corrupted fields.
