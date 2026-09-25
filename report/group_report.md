@@ -16,7 +16,7 @@
 | STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu |
 | --: | --- | --- | --- | --- |
 | 1 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
-| 2 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
+| 2 | Nguyễn Khắc Giáp | 2A202602950 | RAG Specialist | [File, hàm hoặc artifact] |
 | 3 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 | 4 | [Nếu có] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 | 5 | [Nếu có] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
