@@ -64,3 +64,10 @@ def load_or_create_test_set(df: pd.DataFrame, output_path) -> TestSet:
         payload = json.loads(path.read_text(encoding="utf-8"))
         return TestSet(samples=payload)
     return TestSet(samples=build_test_set(df, path))
+
+
+def load_or_build_test_set(df: pd.DataFrame, output_path, refresh: bool = False) -> list[dict[str, Any]]:
+    path = Path(output_path)
+    if refresh or not path.exists():
+        return build_test_set(df, path)
+    return json.loads(path.read_text(encoding="utf-8"))
