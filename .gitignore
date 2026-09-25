@@ -18,6 +18,5 @@ data/quality/baseline_quality_report.json
 data/reports/phase1_report.md
 
 # Local presentation dashboard
-front_end/
 **/front_end/node_modules
 **/front_end/dist
