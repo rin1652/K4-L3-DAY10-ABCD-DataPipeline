@@ -29,6 +29,69 @@ CLEAN_COLUMNS = [
 ]
 
 
+def build_clean_dataframe(records: list[PaperRecord], run_date: datetime) -> pd.DataFrame:
+    """Clean raw Crossref records into the schema used by the vector index."""
+    if not records:
+        return pd.DataFrame(columns=CLEAN_COLUMNS)
+
+    df = pd.DataFrame([asdict(record) for record in records])
+
+    df["paper_id"] = df["paper_id"].map(normalize_doi)
+    df["title"] = df["title"].map(strip_markup)
+    df["summary"] = df["summary"].map(strip_markup)
+    df["primary_category"] = df["primary_category"].map(strip_markup)
+    df["abs_url"] = df["abs_url"].fillna("").map(lambda value: normalize_whitespace(str(value)))
+    df["pdf_url"] = df["pdf_url"].fillna("").map(lambda value: normalize_whitespace(str(value)))
+    df["comment"] = df["comment"].fillna("").map(strip_markup)
+    df["authors"] = df["authors"].map(clean_list)
+    df["categories"] = df["categories"].map(clean_list)
+    df["primary_category"] = [
+        primary or (categories[0] if categories else "Unknown")
+        for primary, categories in zip(df["primary_category"], df["categories"], strict=True)
+    ]
+
+    published = parse_dates(df["published"])
+    updated = parse_dates(df["updated"]).fillna(published)
+    run_day = as_utc_timestamp(run_date).normalize()
+    df["age_days"] = (run_day - published).dt.days
+
+    valid = (df["paper_id"] != "") & (df["title"] != "") & published.notna()
+    df = df[valid].copy()
+    published = published[valid]
+    updated = updated[valid]
+
+    df["published"] = published.dt.strftime("%Y-%m-%d")
+    df["updated"] = updated.dt.strftime("%Y-%m-%d")
+    df["age_days"] = df["age_days"].astype(int)
+    df = refresh_derived_columns(df)
+
+    df = df.sort_values(["paper_id", "updated"], ascending=[True, False])
+    df = df.drop_duplicates(subset=["paper_id"], keep="first")
+    df = df.sort_values(["published", "paper_id"], ascending=[False, True]).reset_index(drop=True)
+    return df[CLEAN_COLUMNS]
+
+
+def refresh_derived_columns(df: pd.DataFrame, run_date: datetime | None = None) -> pd.DataFrame:
+    """Rebuild helper columns after title/summary/authors/categories/published changed."""
+    refreshed = df.copy()
+
+    if run_date is not None:
+        published = parse_dates(refreshed["published"])
+        run_day = as_utc_timestamp(run_date).normalize()
+        refreshed["published"] = published.dt.strftime("%Y-%m-%d")
+        refreshed["age_days"] = (run_day - published).dt.days.fillna(0).astype(int)
+
+    refreshed["title"] = refreshed["title"].fillna("").map(strip_markup)
+    refreshed["summary"] = refreshed["summary"].fillna("").map(strip_markup)
+    refreshed["authors"] = refreshed["authors"].map(clean_list)
+    refreshed["categories"] = refreshed["categories"].map(clean_list)
+    refreshed["authors_joined"] = refreshed["authors"].apply(lambda values: compact_join(values) or "Unknown")
+    refreshed["categories_joined"] = refreshed["categories"].apply(lambda values: compact_join(values) or "Unknown")
+    refreshed["summary_chars"] = refreshed["summary"].str.len().astype(int)
+    refreshed["text_for_embedding"] = refreshed.apply(compose_text_for_embedding, axis=1)
+    return refreshed
+
+
 def compose_text_for_embedding(row: dict[str, Any] | pd.Series) -> str:
     return "\n".join(
         [
@@ -41,72 +104,28 @@ def compose_text_for_embedding(row: dict[str, Any] | pd.Series) -> str:
     )
 
 
-def refresh_derived_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Recompute helper columns that depend on title/summary/authors/categories/published."""
-    df = df.copy()
-    df["authors_joined"] = df["authors"].apply(lambda items: compact_join(items or []))
-    df["categories_joined"] = df["categories"].apply(lambda items: compact_join(items or []))
-    df["summary_chars"] = df["summary"].fillna("").str.len().astype(int)
-    df["text_for_embedding"] = df.apply(compose_text_for_embedding, axis=1)
-    return df
-
-
-def _clean_list(values: Any) -> list[str]:
-    if values is None or isinstance(values, float):
+def clean_list(value: Any) -> list[str]:
+    if value is None or isinstance(value, float):
         return []
-    if isinstance(values, str):
-        values = [values]
+    if isinstance(value, str):
+        value = [value]
+
     cleaned: list[str] = []
-    for value in values:
-        item = normalize_whitespace(str(value or ""))
-        if item and item not in cleaned:
-            cleaned.append(item)
+    for item in value:
+        text = normalize_whitespace(str(item or ""))
+        if text and text not in cleaned:
+            cleaned.append(text)
     return cleaned
 
 
-def _to_date(values: pd.Series) -> pd.Series:
+def parse_dates(values: pd.Series) -> pd.Series:
     return pd.to_datetime(values, errors="coerce", utc=True).dt.normalize()
 
 
-def build_clean_dataframe(records: list[PaperRecord], run_date: datetime) -> pd.DataFrame:
-    if not records:
-        return pd.DataFrame(columns=CLEAN_COLUMNS)
-
-    df = pd.DataFrame([asdict(record) for record in records])
-
-    # 1. Normalize text fields (JATS/HTML tags, entities, whitespace).
-    df["paper_id"] = df["paper_id"].map(normalize_doi)
-    for column in ("title", "summary", "primary_category", "abs_url", "pdf_url", "comment"):
-        df[column] = df[column].map(strip_markup)
-    df["authors"] = df["authors"].map(_clean_list)
-    df["categories"] = df["categories"].map(_clean_list)
-    df["primary_category"] = [
-        primary or (categories[0] if categories else "Uncategorized")
-        for primary, categories in zip(df["primary_category"], df["categories"], strict=True)
-    ]
-
-    # 2. Parse dates; 3. age_days relative to the run date.
-    published = _to_date(df["published"])
-    updated = _to_date(df["updated"]).fillna(published)
-    run_day = pd.Timestamp(run_date if run_date.tzinfo else run_date.replace(tzinfo=UTC)).tz_convert(UTC).normalize()
-    df["age_days"] = (run_day - published).dt.days
-
-    # 5a. Filter rows that cannot be served to the RAG index.
-    valid = (df["paper_id"] != "") & (df["title"] != "") & (df["summary"] != "") & published.notna()
-    df, published, updated = df[valid].copy(), published[valid], updated[valid]
-    df["published"] = published.dt.strftime("%Y-%m-%d")
-    df["updated"] = updated.dt.strftime("%Y-%m-%d")
-    df["age_days"] = df["age_days"].astype(int)
-
-    # 4. Helper columns + text_for_embedding.
-    df = refresh_derived_columns(df)
-
-    # 5b. Deduplicate on paper_id, keeping the most recently updated version.
-    df = df.sort_values(["paper_id", "updated"], ascending=[True, False]).drop_duplicates("paper_id", keep="first")
-
-    # 6. Newest first, stable tie-break on paper_id.
-    df = df.sort_values(["published", "paper_id"], ascending=[False, True]).reset_index(drop=True)
-    return df[CLEAN_COLUMNS]
+def as_utc_timestamp(value: datetime) -> pd.Timestamp:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return pd.Timestamp(value).tz_convert(UTC)
 
 
 def save_dataframe(df: pd.DataFrame, csv_path, json_path) -> None:

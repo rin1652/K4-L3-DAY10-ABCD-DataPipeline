@@ -1,0 +1,53 @@
+[
+  {
+    "id": "q1",
+    "type": "summary",
+    "question_type": "summary",
+    "question": "Tóm tắt nội dung chính của nghiên cứu 'Agentic Retrieval-Augmented Generation for Knowledge-Intensive Tasks'.",
+    "ground_truth": "Retrieval-Augmented Generation (RAG) significantly improves large language model accuracy by grounding responses in retrieved passages. We explore agentic multi-hop reasoning and routing across heterogeneous vector indices.",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671801"
+    ]
+  },
+  {
+    "id": "q2",
+    "type": "authors",
+    "question_type": "authors",
+    "question": "Ai là tác giả của nghiên cứu 'Agentic Retrieval-Augmented Generation for Knowledge-Intensive Tasks'?",
+    "ground_truth": "Minh Nguyen, Hoang Le",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671801"
+    ]
+  },
+  {
+    "id": "q3",
+    "type": "date",
+    "question_type": "date",
+    "question": "Nghiên cứu 'Data Observability and Quality Gates for Production RAG Systems' được công bố vào thời điểm nào?",
+    "ground_truth": "2026-06-12",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671802"
+    ]
+  },
+  {
+    "id": "q4",
+    "type": "category",
+    "question_type": "category",
+    "question": "Nghiên cứu 'Data Observability and Quality Gates for Production RAG Systems' thuộc lĩnh vực chuyên môn nào?",
+    "ground_truth": "Software Engineering, Data Systems",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671802"
+    ]
+  },
+  {
+    "id": "q5",
+    "type": "multi_hop",
+    "question_type": "multi_hop",
+    "question": "So sánh mối liên hệ giữa nghiên cứu 'Agentic Retrieval-Augmented Generation for Knowledge-Intensive Tasks' và 'Data Observability and Quality Gates for Production RAG Systems'.",
+    "ground_truth": "Nghiên cứu thứ nhất thuộc Artificial Intelligence, Information Retrieval và tập trung vào: Retrieval-Augmented Generation (RAG) significantly improves large language model accuracy by grounding responses in retrieved passages. We explore agentic multi-hop reasoning and routing across heterogeneous vector indices. Nghiên cứu thứ hai thuộc Software Engineering, Data Systems và tập trung vào: Silent data corruption in RAG pipelines degrades LLM answer faithfulness without throwing runtime errors. We introduce automated quality gates using Great Expectations 1.x to catch stale and malformed embeddings before serving.",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671801",
+      "10.1145/3637528.3671802"
+    ]
+  }
+]
