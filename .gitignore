@@ -6,3 +6,18 @@ src/*.egg-info/
 lab/
 **/__pycache__/
 doc_verification_report.md
+
+# Generated pipeline artifacts
+data/chroma/*
+!data/chroma/.gitkeep
+data/embeddings/*
+!data/embeddings/.gitkeep
+data/results/*_answers.json
+data/results/baseline_metrics.json
+data/quality/baseline_quality_report.json
+data/reports/phase1_report.md
+
+# Local presentation dashboard
+front_end/
+**/front_end/node_modules
+**/front_end/dist

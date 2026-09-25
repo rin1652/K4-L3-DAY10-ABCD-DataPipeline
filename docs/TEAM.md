@@ -1,8 +1,8 @@
 # Danh Sách Thành Viên & Báo Cáo Phân Công Nhóm
 
-- **Tên Nhóm:** `[Điền tên nhóm]`
+- **Tên Nhóm:** `ABCD`
 - **Mã Nhóm / Lớp:** `K4-L3-DAY10`
-- **Tên Repository Nộp Bài:** `K4-L3-DAY10-TenNhom-DataPipeline`
+- **Tên Repository Nộp Bài:** `K4-L3-DAY10-ABCD-DataPipeline`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | STT | Họ và tên | MSSV | Email | Vai trò & Phân công công việc | Báo cáo cá nhân |
 |---:|---|---|---|---|---|
-| 1 | | | | Trưởng nhóm / Pipeline Integrator (`core/`, `phase1.py`, `corruption_flow.py`) | `report/<MSSV1>_HoTen.md` |
+| 1 | Nguyễn Đình Phúc | 2A202602953 | | Pipeline Lead + Data Foundation (`core/`, `crossref.py`, `cleaning.py`, `corruption.py`, `corruption_flow.py`) | `report/individual_report.md` |
 | 2 | | | | Data Foundation & Recovery (`crossref.py`, `cleaning.py`, raw data) | `report/<MSSV2>_HoTen.md` |
 | 3 | | | | RAG & Vector Index (`retrieval/index.py`, `embeddings.py`, ChromaDB) | `report/<MSSV3>_HoTen.md` |
 | 4 | Đoàn Tuấn Long | 2A202602609 | | Observability & Evaluation (`quality.py` GX 1.x, `reporting.py`, `testset.py`, `metrics.py`) | `report/2A202602609_DoanTuanLong.md` |

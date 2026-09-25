@@ -66,10 +66,23 @@ def generate_phase1_report(
     metrics: dict[str, Any],
     quality: dict[str, Any],
     freshness: dict[str, Any],
+    answers: list[dict[str, Any]] | None = None,
 ) -> None:
-    """Write the baseline markdown report from source, metrics, quality, and freshness."""
+    """Write the baseline markdown report from source, metrics, quality, freshness, and optional answers."""
     source_lines = "\n".join(f"- `{key}`: {_fmt(value)}" for key, value in source_summary.items()) or "- n/a"
-    body = f"""# Phase 1 — Baseline Report
+    answer_rows = []
+    for item in (answers or [])[:5]:
+        answer_rows.append(
+            "| {id} | {kind} | {hit} | {f1:.3f} | {score} |".format(
+                id=item.get("id", ""),
+                kind=item.get("question_type", item.get("type", "")),
+                hit=item.get("retrieval_hit", ""),
+                f1=float(item.get("token_f1", 0.0)),
+                score=(item.get("judge") or {}).get("score", ""),
+            )
+        )
+
+    body = f"""# Phase 1 - Baseline Report
 
 ## Source
 
@@ -89,6 +102,11 @@ Quality gate success: `{quality.get("success")}`
 
 {_freshness_block(freshness)}
 """
+    if answer_rows:
+        body += "\n## Sample Answers\n\n"
+        body += "| ID | Type | Retrieval hit | Token F1 | Judge score |\n"
+        body += "| --- | --- | ---: | ---: | ---: |\n"
+        body += "\n".join(answer_rows) + "\n"
     write_text(Path(report_path), body)
 
 
@@ -138,7 +156,7 @@ def generate_corruption_report(
         )
     )
 
-    body = f"""# Corruption Report — Baseline vs Corrupted vs Repaired
+    body = f"""# Corruption Report - Baseline vs Corrupted vs Repaired
 
 Silent failure means the RAG agent still answers after bad data lands. The quality gate and freshness SLA are the signals that should fire before that data is served.
 
