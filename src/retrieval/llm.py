@@ -1,11 +1,21 @@
 from __future__ import annotations
 
+import warnings
+
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
 from core.config import Settings, normalized_provider, require_llm_credentials
+
+_OPENAI_REASONING_PREFIXES = ("o1", "o3", "o4", "gpt-5", "gpt-6")
+# langchain-openai's Responses API parsing triggers noisy (harmless) pydantic serializer warnings.
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+
+
+def _is_openai_reasoning_model(model_name: str) -> bool:
+    return model_name.strip().lower().startswith(_OPENAI_REASONING_PREFIXES)
 
 
 def build_llm(settings: Settings, temperature: float = 0.0):
@@ -19,10 +29,14 @@ def build_llm(settings: Settings, temperature: float = 0.0):
             temperature=temperature,
         )
     if provider == "openai":
+        # Reasoning models (o-series, gpt-5+) reject `temperature` and only allow
+        # function tools / structured output through the Responses API.
+        sampling = {} if _is_openai_reasoning_model(settings.model_name) else {"temperature": temperature}
         return ChatOpenAI(
             model=settings.model_name,
             api_key=settings.openai_api_key,
-            temperature=temperature,
+            use_responses_api=True,
+            **sampling,
         )
     if provider == "anthropic":
         return ChatAnthropic(
